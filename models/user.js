@@ -18,7 +18,6 @@ const userSchema = mongoose.Schema({
   },
   key: {
     type: String,
-    required: true,
   },
   email: {
     type: String,
@@ -35,9 +34,11 @@ userSchema.methods.setPassword = function(password) {
   this.password = crypto.pbkdf2Sync(password, this.salt, 1000, 64, `sha512`).toString(`hex`);
 }
 
-userSchema.methods.getKey = function() {
-  const newKey = crypto.randomBytes(16).toString('hex');
+userSchema.methods.assignNewKey = async function() {
+  const newKey = crypto.randomBytes(10).toString('hex');
+  console.log("Generated Secret:", newKey);
   this.key = newKey;
+  await this.save();
   return newKey;
 }
 

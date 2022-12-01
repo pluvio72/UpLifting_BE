@@ -15,8 +15,9 @@ router.post('/sign-in', async (req, res) => {
     const user = await User.findOne({ username });
     if (user) {
       const correctPassword = user.checkPassword(password);
-      const newSecretKey = user.getKey();
-      const token = jwt.sign({ email: user.email, user: user.username }, newSecretKey, { expiresIn: '12h' });
+      const newSecretKey = await user.assignNewKey();
+      const token = jwt.sign({ email: user.email, user: user.username }, newSecretKey);
+      console.log('Sign Up Token Generated:', token);
 
       if (correctPassword) return res.json({ success: true, token });
       else return res.json({
@@ -71,21 +72,17 @@ router.post('/sign-up', async (req, res) => {
 
     var salt = crypto.randomBytes(16).toString('hex');
     var encryptedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, `sha512`).toString(`hex`);
-    var key = crypto.randomBytes(16).toString('hex');
     const newUser = new User({
       username,
       password: encryptedPassword,
       salt,
-      key,
       email,
     });
 
     await newUser.save();
   
-    var token = jwt.sign({ user: username, email }, key, { expiresIn: '12h' });
     return res.json({
       success: true,
-      token
     });
   }  catch(err) {
     console.warn('Error in POST: sign-up :', err);

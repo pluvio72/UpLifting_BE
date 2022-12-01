@@ -3,11 +3,12 @@ const User = require('../models/user');
 
 const authenticateUser = async function (req, res, next) {
   try {
-    const splitAuthHeader = req.headers.auhtorization.split(' ');
+    const splitAuthHeader = req.headers.authorization.split(' ');
     const token = splitAuthHeader[0];
     const user = splitAuthHeader[1];
+    // console.log(req.headers.authorization + '***\n' + token);
 
-    const _user = User.findOne({ username: user });
+    const _user = await User.findOne({ username: user });
     if (_user) {
       try {
         jwt.verify(token, _user.key);

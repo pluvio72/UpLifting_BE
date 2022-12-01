@@ -1,18 +1,25 @@
 const mongoose = require('mongoose');
 
-const workoutSchema = mongoose.Schema({
-  date_completed: {
-    type: Date,
-    default: Date.now,
-  },
-  creator: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'users',
+const Set = mongoose.Schema({
+  reps: {
+    type: Number,
     required: true,
   },
-  exercises: {
-    type: [ExerciseSet],
+  weight: {
+    type: Number,
     required: true,
+  },
+  metric: {
+    type: String,
+    required: true,
+  },
+  completed: {
+    type: Boolean,
+    default: false,
+  },
+  note: {
+    type: String,
+    required: false
   }
 });
 
@@ -35,26 +42,19 @@ const ExerciseSet = mongoose.Schema({
   },
 });
 
-const Set = mongoose.Schema({
-  reps: {
-    type: Number,
+const workoutSchema = mongoose.Schema({
+  date_completed: {
+    type: Date,
+    default: Date.now,
+  },
+  creator: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'users',
     required: true,
   },
-  weight: {
-    type: Number,
+  exercises: {
+    type: [ExerciseSet],
     required: true,
-  },
-  metric: {
-    type: String,
-    required: true,
-  },
-  completed: {
-    type: Boolean,
-    default: false,
-  },
-  note: {
-    type: String,
-    required: false
   }
 });
 
