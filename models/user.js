@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 
+const workout = require('./schemas/workout');
+
 const userSchema = mongoose.Schema({
   username: {
     type: String,
@@ -26,8 +28,17 @@ const userSchema = mongoose.Schema({
   gym: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'gyms',
+  },
+  workoutHistory: {
+    type: [workout],
+    default: [],
   }
 });
+
+userSchema.methods.addWorkout = async function(workoutData) {
+  this.workoutHistory.push(workoutData);
+  await this.save();
+}
 
 userSchema.methods.setPassword = function(password) {
   this.salt = crypto.randomBytes(16).toString('hex');

@@ -1,5 +1,17 @@
 const mongoose = require('mongoose');
 
+const Metric = mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  value: {
+    type: String,
+    required: true
+  },
+  _id: false
+});
+
 const Set = mongoose.Schema({
   reps: {
     type: Number,
@@ -9,10 +21,6 @@ const Set = mongoose.Schema({
     type: Number,
     required: true,
   },
-  metric: {
-    type: String,
-    required: true,
-  },
   completed: {
     type: Boolean,
     default: false,
@@ -20,11 +28,12 @@ const Set = mongoose.Schema({
   note: {
     type: String,
     required: false
-  }
+  },
+  _id: false,
 });
 
 const ExerciseSet = mongoose.Schema({
-  exerciseName: {
+  name: {
     type: String,
     required: true,
   },
@@ -36,9 +45,9 @@ const ExerciseSet = mongoose.Schema({
     type: String,
     required: false,
   },
-  measurementMetric: {
-    type: String,
-    required: false,
+  metric: {
+    type: Metric,
+    required: true,
   },
 });
 
@@ -55,9 +64,15 @@ const workoutSchema = mongoose.Schema({
   exercises: {
     type: [ExerciseSet],
     required: true,
+  },
+  title: {
+    type: String,
+    required: true,
+  },
+  metrics: {
+    type: [Metric],
+    required: true,
   }
 });
 
-const Workout = mongoose.model('workouts', workoutSchema);
-
-module.exports = Workout;
+module.exports = workoutSchema;

@@ -17,7 +17,7 @@ router.post('/sign-in', async (req, res) => {
       const correctPassword = user.checkPassword(password);
       const newSecretKey = await user.assignNewKey();
       const token = jwt.sign({ email: user.email, user: user.username }, newSecretKey);
-      console.log('Sign Up Token Generated:', token);
+      // console.log('Sign Up Token Generated:', token);
 
       if (correctPassword) return res.json({ success: true, token });
       else return res.json({
