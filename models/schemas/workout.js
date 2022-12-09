@@ -29,6 +29,10 @@ const Set = mongoose.Schema({
     type: String,
     required: false
   },
+  isPR: {
+    type: Boolean,
+    required: true,
+  },
   _id: false,
 });
 
@@ -72,6 +76,10 @@ const workoutSchema = mongoose.Schema({
   metrics: {
     type: [Metric],
     required: true,
+  },
+  isTemplate: {
+    type: Boolean,
+    default: false,
   }
 });
 
