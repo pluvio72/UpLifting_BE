@@ -1,17 +1,19 @@
 const router = require("express").Router();
 const authenticateUser = require("../middleware/auth");
 const User = require("../models/user");
+const Workout = require('../models/workout');
 
 router.get("/:username", authenticateUser, async (req, res) => {
   try {
     const { username } = req.params;
 
-    const user = await User.findOne({ username }).select("workoutHistory");
+    const user = await User.findOne({ username });
+    const workouts = await Workout.find({ creator: user._id });
     if (!user) return res.json({ success: false, message: "Error" });
 
     return res.json({
       success: true,
-      workouts: user.workoutHistory,
+      workouts,
     });
   } catch (error) {
     console.warn(`Error in GET: /workouts/:userId, ${error.message}.`);
@@ -22,13 +24,14 @@ router.get("/:username", authenticateUser, async (req, res) => {
 router.get("/:username/recent/:limit", authenticateUser, async (req, res) => {
   try {
     const { username, limit } = req.params;
-    const user = await User.findOne({ username }).select("workoutHistory");
+    const user = await User.findOne({ username });
+    const workouts = await Workout.find({ creator: user._id });
     if (!user) return res.json({ success: false, message: "Error" });
 
     const selectedWorkouts =
-      user.workoutHistory.length > limit
-        ? user.workoutHistory.slice(0, limit)
-        : user.workoutHistory;
+    workouts.length > limit
+        ? workouts.slice(0, limit)
+        : workouts;
     return res.json({ success: true, workouts: selectedWorkouts });
   } catch (error) {
     console.warn(
@@ -41,7 +44,8 @@ router.get("/:username/recent/:limit", authenticateUser, async (req, res) => {
 router.get("/:username/charts", authenticateUser, async (req, res) => {
   try {
     const { username } = req.params;
-    const user = await User.findOne({ username }).select("workoutHistory");
+    const user = await User.findOne({ username });
+    
     if (!user) return res.json({ success: false, message: "Error" });
 
     const workouts = user.workoutHistory;
@@ -56,12 +60,14 @@ router.post("/new", authenticateUser, async (req, res) => {
 
     try {
       const user = await User.findOne({ username });
+      const usersWorkouts = await Workout.find({ creator: user._id });
 
-      let workoutData = workout;
       // check if any exercise sets include a PR
+      let workoutData = workout;
       for (let i = 0; i < workoutData.length; i += 1) {
         for (let j = 0; j < workoutData[i].sets.length; j += 1) {
-          const isPR = user.checkForPR(
+          const isPR = Workout.checkForPR(
+            usersWorkouts,
             workoutData[i].name,
             workoutData[i].sets[j].weight,
             workoutData[i].sets[j].reps
@@ -69,14 +75,13 @@ router.post("/new", authenticateUser, async (req, res) => {
           workoutData[i].sets[j].isPR = isPR;
         }
       }
-      const newWorkout = {
+      const newWorkout = new Workout({
         title,
         exercises: workoutData,
         creator: user._id,
         metrics,
-      };
-      console.log("Workout Data:", workoutData[0].sets);
-      await user.addWorkout(newWorkout);
+      });
+      await newWorkout.save();
 
       return res.json({ success: true });
     } catch (error) {
@@ -85,6 +90,22 @@ router.post("/new", authenticateUser, async (req, res) => {
     }
   } catch (error) {
     console.warn(`Error in POST: /workouts/new, ${error.message}.`);
+    return res.json({ success: false });
+  }
+});
+
+router.get('/:username/prs/:limit', authenticateUser, async (req, res) => {
+  try {
+    const { username, limit } = req.query;
+    const user = User.find({ username, "workoutHistory.exercises": {
+      $elemMatch: {
+        "sets": { isPR: true }
+      }
+    } });
+    let prs = [];
+
+  } catch (error) {
+    console.warn(`Error in GET: /workouts/:username/prs/:limit, ${error.message}.`);
     return res.json({ success: false });
   }
 });

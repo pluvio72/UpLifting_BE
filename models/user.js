@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 
-const workout = require("./schemas/workout");
+const workout = require("./workout");
 
 const userSchema = mongoose.Schema({
   username: {
@@ -29,16 +29,7 @@ const userSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "gyms",
   },
-  workoutHistory: {
-    type: [workout],
-    default: [],
-  },
 });
-
-userSchema.methods.addWorkout = async function (workoutData) {
-  this.workoutHistory.push(workoutData);
-  await this.save();
-};
 
 userSchema.methods.setPassword = function (password) {
   this.salt = crypto.randomBytes(16).toString("hex");
@@ -53,27 +44,6 @@ userSchema.methods.assignNewKey = async function () {
   this.key = newKey;
   await this.save();
   return newKey;
-};
-
-userSchema.methods.checkForPR = function (exerciseName, weight, reps) {
-  let workoutData = this.workoutHistory;
-  // returns array of arrays so must flatmap
-  let exerciseSetsToCheck = workoutData.map((e) => e.exercises);
-  let exercises = [];
-  for (let i = 0; i < exerciseSetsToCheck.length; i += 1) {
-    exercises = exercises.concat(exerciseSetsToCheck[i]);
-  }
-
-  for (let i = 0; i < exercises.length; i += 1) {
-    for (let j = 0; j < exercises[i].sets.length; j += 1) {
-      if (
-        weight * reps >
-        exercises[i].sets[j].weight * exercises[i].sets[j].reps
-      )
-        return true;
-    }
-  }
-  return false;
 };
 
 userSchema.methods.checkPassword = function (password) {

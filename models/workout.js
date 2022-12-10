@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Metric = mongoose.Schema({
   name: {
@@ -7,9 +7,9 @@ const Metric = mongoose.Schema({
   },
   value: {
     type: String,
-    required: true
+    required: true,
   },
-  _id: false
+  _id: false,
 });
 
 const Set = mongoose.Schema({
@@ -27,7 +27,7 @@ const Set = mongoose.Schema({
   },
   note: {
     type: String,
-    required: false
+    required: false,
   },
   isPR: {
     type: Boolean,
@@ -43,7 +43,7 @@ const ExerciseSet = mongoose.Schema({
   },
   sets: {
     type: [Set],
-    required: true
+    required: true,
   },
   note: {
     type: String,
@@ -62,7 +62,7 @@ const workoutSchema = mongoose.Schema({
   },
   creator: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'users',
+    ref: "users",
     required: true,
   },
   exercises: {
@@ -80,7 +80,32 @@ const workoutSchema = mongoose.Schema({
   isTemplate: {
     type: Boolean,
     default: false,
-  }
+  },
 });
 
-module.exports = workoutSchema;
+workoutSchema.statics.checkForPR = function (
+  previousWorkouts,
+  exerciseName,
+  weight,
+  reps
+) {
+  // returns array of arrays so must flatmap
+  let sets = [];
+  for (let i = 0; i < previousWorkouts.length; i += 1) {
+    for (let j = 0; j < previousWorkouts[i].exercises.length; j += 1) {
+      if (previousWorkouts[i].exercises[j].name === exerciseName)
+        sets = sets.concat(previousWorkouts[i].exercises[j].sets);
+    }
+  }
+
+  for (let i = 0; i < sets.length; i += 1) {
+    console.log("Prev:", sets[i]);
+    console.log('To:', weight * reps);
+    if ((weight * reps) > (sets[i].weight * sets[i].reps)) return true;
+  }
+  return false;
+};
+
+const Workout = mongoose.model("workouts", workoutSchema);
+
+module.exports = Workout;
