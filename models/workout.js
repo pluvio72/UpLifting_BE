@@ -89,7 +89,6 @@ workoutSchema.statics.checkForPR = function (
   weight,
   reps
 ) {
-  // returns array of arrays so must flatmap
   let sets = [];
   for (let i = 0; i < previousWorkouts.length; i += 1) {
     for (let j = 0; j < previousWorkouts[i].exercises.length; j += 1) {
@@ -98,9 +97,8 @@ workoutSchema.statics.checkForPR = function (
     }
   }
 
+  // can combine this into loop above
   for (let i = 0; i < sets.length; i += 1) {
-    console.log("Prev:", sets[i]);
-    console.log('To:', weight * reps);
     if ((weight * reps) > (sets[i].weight * sets[i].reps)) return true;
   }
   return false;

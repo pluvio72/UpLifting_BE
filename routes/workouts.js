@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const authenticateUser = require("../middleware/auth");
 const User = require("../models/user");
-const Workout = require('../models/workout');
+const Workout = require("../models/workout");
 
 router.get("/:username", authenticateUser, async (req, res) => {
   try {
@@ -29,9 +29,7 @@ router.get("/:username/recent/:limit", authenticateUser, async (req, res) => {
     if (!user) return res.json({ success: false, message: "Error" });
 
     const selectedWorkouts =
-    workouts.length > limit
-        ? workouts.slice(0, limit)
-        : workouts;
+      workouts.length > limit ? workouts.slice(0, limit) : workouts;
     return res.json({ success: true, workouts: selectedWorkouts });
   } catch (error) {
     console.warn(
@@ -45,7 +43,7 @@ router.get("/:username/charts", authenticateUser, async (req, res) => {
   try {
     const { username } = req.params;
     const user = await User.findOne({ username });
-    
+
     if (!user) return res.json({ success: false, message: "Error" });
 
     const workouts = user.workoutHistory;
@@ -94,19 +92,40 @@ router.post("/new", authenticateUser, async (req, res) => {
   }
 });
 
-router.get('/:username/prs/:limit', authenticateUser, async (req, res) => {
+router.get("/:username/prs/:limit", authenticateUser, async (req, res) => {
   try {
-    const { username, limit } = req.query;
-    const user = User.find({ username, "workoutHistory.exercises": {
-      $elemMatch: {
-        "sets": { isPR: true }
-      }
-    } });
-    let prs = [];
+    const { username, limit } = req.params;
+    const user = await User.findOne({ username });
+    const workouts = await Workout.find({
+      creator: user._id,
+      exercises: { $elemMatch: { sets: { $elemMatch: { isPR: true } } } },
+    }).sort('date_completed').select('exercises date_completed');
 
+    // just get exercise set field
+    let prs = [];
+    for (let i = 0; i < workouts.length; i += 1) {
+      for (let j = 0; j < workouts[i].exercises.length; j += 1) {
+        for (let k = 0; k < workouts[i].exercises[j].sets.length; k += 1) {
+          if (workouts[i].exercises[j].sets[k].isPR) {
+            const dateCompleted = new Date(workouts[i].date_completed);
+            prs.push({
+              name: workouts[i].exercises[j].name,
+              date_completed: dateCompleted.getDate() + "/" + dateCompleted.getMonth(),
+              weight: workouts[i].exercises[j].sets[k].weight,
+              reps: workouts[i].exercises[j].sets[k].reps,
+            });
+          }
+        }
+      }
+    }
+    console.log("PRs:", prs);
+    
+    return res.json({ success: true, prs: prs.slice(0, limit)});
   } catch (error) {
-    console.warn(`Error in GET: /workouts/:username/prs/:limit, ${error.message}.`);
-    return res.json({ success: false });
+    console.warn(
+      `Error in GET: /workouts/:username/prs/:limit, ${error.message}.`
+    );
+    return res.json({ success: false, prs: [] });
   }
 });
 
