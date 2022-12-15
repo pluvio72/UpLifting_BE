@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const crypto = require("crypto");
 
 const workout = require("./workout");
-const { convertToKilos } = require("../utils/weight");
+const { convertToPounds } = require("../utils/weight");
 
 const userSchema = mongoose.Schema({
   username: {
@@ -78,15 +78,22 @@ userSchema.methods.getWorkouts = async function (query, select, options) {
     for (let i = 0; i < workouts.length; i += 1) {
       for (let j = 0; j < workouts[i].exercises.length; j += 1) {
         for (let k = 0; k < workouts[i].exercises[j].sets.length; k += 1) {
-          workouts[i].exercises[j].sets[k].weight = convertToKilos(
-            workouts[i].exercises[j].sets[k].weight
-          );
+          if (needsConverting) {
+            workouts[i].exercises[j].sets[k].weight = convertToPounds(
+              workouts[i].exercises[j].sets[k].weight
+            );
+          }
         }
       }
     }
   }
   return workouts;
 };
+
+userSchema.methods.addPRs = async function (prs) {
+  this.prs.push(prs);
+  await this.save();
+}
 
 const User = mongoose.model("users", userSchema);
 

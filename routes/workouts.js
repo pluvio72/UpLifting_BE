@@ -64,6 +64,7 @@ router.post("/new", authenticateUser, async (req, res) => {
       // but send back in pounds
       const needsConverting = !user.settings.useKilos;
 
+      const prs = [];
       // check if any exercise sets include a PR
       let workoutData = workout;
       for (let i = 0; i < workoutData.length; i += 1) {
@@ -79,6 +80,11 @@ router.post("/new", authenticateUser, async (req, res) => {
             workoutData[i].sets[j].reps
           );
           workoutData[i].sets[j].isPR = isPR;
+
+          prs.push({
+            ...workoutData[i].sets[j],
+            date_completed: Date.now()
+          });
         }
       }
       const newWorkout = new Workout({
@@ -89,6 +95,7 @@ router.post("/new", authenticateUser, async (req, res) => {
         isTemplate,
       });
       await newWorkout.save();
+      await user.addPRs(prs);
 
       return res.json({ success: true });
     } catch (error) {
