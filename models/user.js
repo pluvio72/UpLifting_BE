@@ -36,6 +36,8 @@ const userSchema = mongoose.Schema({
         weight: String,
         reps: String,
         date_completed: Date,
+        name: String,
+        _id: false,
       },
     ],
     default: [],
@@ -81,7 +83,7 @@ userSchema.methods.getWorkouts = async function (query, select, options) {
           if (needsConverting) {
             workouts[i].exercises[j].sets[k].weight = convertToPounds(
               workouts[i].exercises[j].sets[k].weight
-            );
+            ).toFixed(1);
           }
         }
       }
@@ -91,7 +93,7 @@ userSchema.methods.getWorkouts = async function (query, select, options) {
 };
 
 userSchema.methods.addPRs = async function (prs) {
-  this.prs.push(prs);
+  this.prs = this.prs.concat(prs);
   await this.save();
 }
 

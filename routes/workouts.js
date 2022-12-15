@@ -83,7 +83,8 @@ router.post("/new", authenticateUser, async (req, res) => {
 
           prs.push({
             ...workoutData[i].sets[j],
-            date_completed: Date.now()
+            date_completed: Date.now(),
+            name: workoutData[i].name
           });
         }
       }
