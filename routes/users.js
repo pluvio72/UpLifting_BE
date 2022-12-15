@@ -4,6 +4,7 @@ var crypto = require('crypto');
 var jwt = require('jsonwebtoken');
 
 var { Gym, User } = require('../models'); 
+const authenticateUser = require('../middleware/auth');
 
 router.post('/sign-in', async (req, res) => {
   const {
@@ -86,6 +87,24 @@ router.post('/sign-up', async (req, res) => {
     });
   }  catch(err) {
     console.warn('Error in POST: sign-up :', err);
+    return res.json({ success: false });
+  }
+});
+
+router.post('/update/settings', authenticateUser, async (req, res) => {
+  try { 
+    // data will be of one of the following fields in settings:
+    //    useKilos,
+    const { username, data } = req.body;
+
+    const success = await User.updateOne({ username }, {
+        settings: {
+          ...data
+        }
+    });
+    return res.json({ success: success.acknowledged });
+  } catch (error) {
+    console.warn(`Error in POST /users/update, ${error.message}.`);
     return res.json({ success: false });
   }
 });
