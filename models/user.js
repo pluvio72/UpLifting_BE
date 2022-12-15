@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const crypto = require("crypto");
 
 const workout = require("./workout");
+const { convertToKilos } = require("../utils/weight");
 
 const userSchema = mongoose.Schema({
   username: {
@@ -29,6 +30,20 @@ const userSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "gyms",
   },
+  prs: {
+    type: [
+      {
+        weight: String,
+        reps: String,
+        date_completed: Date,
+      },
+    ],
+    default: [],
+  },
+  settings: {
+    useKilos: Boolean,
+  },
+  bodyWeight: Number,
 });
 
 userSchema.methods.setPassword = function (password) {
@@ -36,6 +51,13 @@ userSchema.methods.setPassword = function (password) {
   this.password = crypto
     .pbkdf2Sync(password, this.salt, 1000, 64, `sha512`)
     .toString(`hex`);
+};
+
+userSchema.methods.checkPassword = function (password) {
+  var inputHashedPassword = crypto
+    .pbkdf2Sync(password, this.salt, 1000, 64, `sha512`)
+    .toString(`hex`);
+  return this.password === inputHashedPassword;
 };
 
 userSchema.methods.assignNewKey = async function () {
@@ -46,11 +68,24 @@ userSchema.methods.assignNewKey = async function () {
   return newKey;
 };
 
-userSchema.methods.checkPassword = function (password) {
-  var inputHashedPassword = crypto
-    .pbkdf2Sync(password, this.salt, 1000, 64, `sha512`)
-    .toString(`hex`);
-  return this.password === inputHashedPassword;
+userSchema.methods.getWorkouts = async function (query, select, options) {
+  // if user is using pounds instead of kilos
+  // convert to pounds when sending to FE
+  // as all weight data is stored in KG
+  const needsConverting = !this.settings.useKilos;
+  const workouts = await workout.find({ creator: this._id, ...query }, select, options);
+  if (needsConverting) {
+    for (let i = 0; i < workouts.length; i += 1) {
+      for (let j = 0; j < workouts[i].exercises.length; j += 1) {
+        for (let k = 0; k < workouts[i].exercises[j].sets.length; k += 1) {
+          workouts[i].exercises[j].sets[k].weight = convertToKilos(
+            workouts[i].exercises[j].sets[k].weight
+          );
+        }
+      }
+    }
+  }
+  return workouts;
 };
 
 const User = mongoose.model("users", userSchema);

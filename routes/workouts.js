@@ -2,14 +2,15 @@ const router = require("express").Router();
 const authenticateUser = require("../middleware/auth");
 const User = require("../models/user");
 const Workout = require("../models/workout");
+const { convertToKilos } = require("../utils/weight");
 
 router.get("/:username", authenticateUser, async (req, res) => {
   try {
     const { username } = req.params;
 
     const user = await User.findOne({ username });
-    const workouts = await Workout.find({ creator: user._id });
     if (!user) return res.json({ success: false, message: "Error" });
+    const workouts = await user.getWorkouts();
 
     return res.json({
       success: true,
@@ -25,7 +26,7 @@ router.get("/:username/recent/:limit", authenticateUser, async (req, res) => {
   try {
     const { username, limit } = req.params;
     const user = await User.findOne({ username });
-    const workouts = await Workout.find({ creator: user._id });
+    const workouts = await user.getWorkouts();
     if (!user) return res.json({ success: false, message: "Error" });
 
     const selectedWorkouts =
@@ -54,16 +55,23 @@ router.get("/:username/charts", authenticateUser, async (req, res) => {
 
 router.post("/new", authenticateUser, async (req, res) => {
   try {
-    const { title, username, workout, metrics } = req.body;
+    const { title, username, workout, metrics, isTemplate } = req.body;
 
     try {
       const user = await User.findOne({ username });
       const usersWorkouts = await Workout.find({ creator: user._id });
+      // if user wants to save workout measured in pounds store in kilos
+      // but send back in pounds
+      const needsConverting = !user.settings.useKilos;
 
       // check if any exercise sets include a PR
       let workoutData = workout;
       for (let i = 0; i < workoutData.length; i += 1) {
         for (let j = 0; j < workoutData[i].sets.length; j += 1) {
+          if (needsConverting)
+            workoutData[i].sets[j].weight = convertToKilos(
+              workoutData[i].sets[j].weight
+            );
           const isPR = Workout.checkForPR(
             usersWorkouts,
             workoutData[i].name,
@@ -78,6 +86,7 @@ router.post("/new", authenticateUser, async (req, res) => {
         exercises: workoutData,
         creator: user._id,
         metrics,
+        isTemplate,
       });
       await newWorkout.save();
 
@@ -92,14 +101,29 @@ router.post("/new", authenticateUser, async (req, res) => {
   }
 });
 
+router.get("/:username/templates", authenticateUser, async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const user = await User.findOne({ username });
+    const workouts = user.getWorkouts({ isTemplate: true });
+    return res.json({ success: true, templates: workouts });
+  } catch (error) {
+    console.warn(
+      `Error in GET /workouts/:username/templates, ${error.message}.`
+    );
+    return res.json({ success: false, templates: [] });
+  }
+});
+
 router.get("/:username/prs/:limit", authenticateUser, async (req, res) => {
   try {
     const { username, limit } = req.params;
     const user = await User.findOne({ username });
-    const workouts = await Workout.find({
-      creator: user._id,
+    const workouts = await user.getWorkouts({
       exercises: { $elemMatch: { sets: { $elemMatch: { isPR: true } } } },
-    }).sort('date_completed').select('exercises date_completed');
+    }, "exercises date_completed", { sort: { date_completed: -1 } });
+    console.log("Exericses:", workouts);
 
     // just get exercise set field
     let prs = [];
@@ -110,7 +134,8 @@ router.get("/:username/prs/:limit", authenticateUser, async (req, res) => {
             const dateCompleted = new Date(workouts[i].date_completed);
             prs.push({
               name: workouts[i].exercises[j].name,
-              date_completed: dateCompleted.getDate() + "/" + dateCompleted.getMonth(),
+              date_completed:
+                dateCompleted.getDate() + "/" + dateCompleted.getMonth(),
               weight: workouts[i].exercises[j].sets[k].weight,
               reps: workouts[i].exercises[j].sets[k].reps,
             });
@@ -118,9 +143,8 @@ router.get("/:username/prs/:limit", authenticateUser, async (req, res) => {
         }
       }
     }
-    console.log("PRs:", prs);
-    
-    return res.json({ success: true, prs: prs.slice(0, limit)});
+
+    return res.json({ success: true, prs: prs.slice(0, limit) });
   } catch (error) {
     console.warn(
       `Error in GET: /workouts/:username/prs/:limit, ${error.message}.`
