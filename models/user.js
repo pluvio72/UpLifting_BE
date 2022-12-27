@@ -2,33 +2,42 @@ const mongoose = require("mongoose");
 const crypto = require("crypto");
 
 const workout = require("./workout");
-const { convertToPounds } = require("../utils/weight");
+const {convertToPounds} = require("../utils/weight");
 
 const userSchema = mongoose.Schema({
   username: {
     type: String,
     required: true,
     unique: true,
-    minLength: 4,
+    minLength: 4
   },
   password: {
     type: String,
-    required: true,
+    required: true
+  },
+
+  firstName: {
+    type: String,
+    required: false
+  },
+  lastName: {
+    type: String,
+    required: false
   },
   salt: {
     type: String,
-    required: true,
+    required: true
   },
   key: {
-    type: String,
+    type: String
   },
   email: {
     type: String,
-    unique: true,
+    unique: true
   },
   gym: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "gyms",
+    ref: "gyms"
   },
   prs: {
     type: [
@@ -37,28 +46,33 @@ const userSchema = mongoose.Schema({
         reps: String,
         date_completed: Date,
         name: String,
-        _id: false,
+        _id: false
       },
     ],
-    default: [],
+    default: []
   },
   settings: {
-    useKilos: Boolean,
+    useKilos: Boolean
   },
-  bodyWeight: Number,
+  stats: {
+    weight: {
+      unit: String,
+      value: Number
+    },
+    height: {
+      unit: String,
+      value: Number
+    }
+  }
 });
 
 userSchema.methods.setPassword = function (password) {
   this.salt = crypto.randomBytes(16).toString("hex");
-  this.password = crypto
-    .pbkdf2Sync(password, this.salt, 1000, 64, `sha512`)
-    .toString(`hex`);
+  this.password = crypto.pbkdf2Sync(password, this.salt, 1000, 64, `sha512`).toString(`hex`);
 };
 
 userSchema.methods.checkPassword = function (password) {
-  var inputHashedPassword = crypto
-    .pbkdf2Sync(password, this.salt, 1000, 64, `sha512`)
-    .toString(`hex`);
+  var inputHashedPassword = crypto.pbkdf2Sync(password, this.salt, 1000, 64, `sha512`).toString(`hex`);
   return this.password === inputHashedPassword;
 };
 
@@ -75,15 +89,16 @@ userSchema.methods.getWorkouts = async function (query, select, options) {
   // convert to pounds when sending to FE
   // as all weight data is stored in KG
   const needsConverting = !this.settings.useKilos;
-  const workouts = await workout.find({ creator: this._id, ...query }, select, options);
+  const workouts = await workout.find({
+    creator: this._id,
+    ... query
+  }, select, options);
   if (needsConverting) {
     for (let i = 0; i < workouts.length; i += 1) {
       for (let j = 0; j < workouts[i].exercises.length; j += 1) {
         for (let k = 0; k < workouts[i].exercises[j].sets.length; k += 1) {
           if (needsConverting) {
-            workouts[i].exercises[j].sets[k].weight = convertToPounds(
-              workouts[i].exercises[j].sets[k].weight
-            ).toFixed(1);
+            workouts[i].exercises[j].sets[k].weight = convertToPounds(workouts[i].exercises[j].sets[k].weight).toFixed(1);
           }
         }
       }
