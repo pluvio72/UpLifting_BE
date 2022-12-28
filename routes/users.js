@@ -1,15 +1,15 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
-var crypto = require('crypto');
-var jwt = require('jsonwebtoken');
+var crypto = require("crypto");
+var jwt = require("jsonwebtoken");
 
 var {
   Gym,
   User
-} = require('../models');
-const authenticateUser = require('../middleware/auth');
+} = require("../models");
+const authenticateUser = require("../middleware/auth");
 
-router.post('/sign-in', async (req, res) => {
+router.post("/sign-in", async (req, res) => {
   const {username, password} = req.body;
 
   try {
@@ -23,24 +23,32 @@ router.post('/sign-in', async (req, res) => {
       }, newSecretKey);
       // console.log('Sign Up Token Generated:', token);
 
-      if (correctPassword) 
-        return res.json({success: true, token});
-       else 
-        return res.json({success: false, message: 'Username or Password is incorrect.'});
-      
+      if (correctPassword) {
+        return res.json({
+          success: true,
+          token,
+          account: {
+            firstName: user.firstName,
+            lastName: user.lastName,
+            username: user.username
+          }
+        });
+      } else {
+        return res.json({success: false, message: "Username or Password is incorrect."});
+      }
 
     } else {
-      return res.json({success: false, message: 'Username or Password is incorrect.'});
+      return res.json({success: false, message: "Username or Password is incorrect."});
     }
   } catch (error) {
     console.warn(`Error in POST /users/sign-in, ${
       error.message
     }.`);
-    return res.json({success: false, message: 'Error'});
+    return res.json({success: false, message: "Error"});
   }
 });
 
-router.post('/sign-up', async (req, res) => {
+router.post("/sign-up", async (req, res) => {
   // input data -> {
   //    username: string
   //    password: string
@@ -64,7 +72,7 @@ router.post('/sign-up', async (req, res) => {
       await newGym.save();
     }
 
-    var salt = crypto.randomBytes(16).toString('hex');
+    var salt = crypto.randomBytes(16).toString("hex");
     var encryptedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, `sha512`).toString(`hex`);
     const newUser = new User({username, password: encryptedPassword, salt, email});
 
@@ -72,12 +80,12 @@ router.post('/sign-up', async (req, res) => {
 
     return res.json({success: true});
   } catch (err) {
-    console.warn('Error in POST: sign-up :', err);
+    console.warn("Error in POST: sign-up :", err);
     return res.json({success: false});
   }
 });
 
-router.post('/update/settings', authenticateUser, async (req, res) => {
+router.post("/update/settings", authenticateUser, async (req, res) => {
   try {
     // data will be of one of the following fields in settings:
     //    useKilos,
@@ -99,7 +107,7 @@ router.post('/update/settings', authenticateUser, async (req, res) => {
   }
 });
 
-router.post('/update/stats', authenticateUser, async (req, res) => {
+router.post("/update/stats", authenticateUser, async (req, res) => {
   try {
     const {username, data} = req.body;
 
@@ -118,6 +126,12 @@ router.post('/update/stats', authenticateUser, async (req, res) => {
     }`);
     return res.json({success: false});
   }
-})
+});
+
+router.post("/update/account", authenticateUser, async (req, res) => {
+  try {
+    const {username, data} = req.body;
+  } catch (error) {}
+});
 
 module.exports = router;
