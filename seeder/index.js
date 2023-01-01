@@ -2,11 +2,18 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const { User } = require("../models");
 
+const getUsers = require("./data/userData");
 const generateUser = require("./generators/userGenerator");
 
 mongoose.connect(process.env.DB_URI).then(async (res) => {
 	try {
-		const users = await generateUser(50);
+		// remove all users
+		await User.remove({});
+
+		let users = await generateUser(50);
+		const savedUsers = getUsers();
+		users = users.concat(savedUsers);
+
 		for (let i = 0; i < users.length; i += 1) {
 			const user = new User({
 				firstName: users[i].firstName,
