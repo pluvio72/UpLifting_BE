@@ -1,6 +1,9 @@
 const axios = require("axios");
 const crypto = require("crypto");
 
+const User = require("../../models/user");
+const getSavedUsers = require("../data/userData");
+
 const usernamesURL =
 	"https://raw.githubusercontent.com/danielmiessler/SecLists/master/Usernames/xato-net-10-million-usernames.txt";
 const firstNamesURL =
@@ -22,12 +25,11 @@ const getMailProvider = () =>
 const fetchContent = (url) =>
 	axios.get(url).then((res) => res.data.split("\n"));
 
-const generateUser = async (count) => {
+const generateUsers = async (count) => {
 	let usernames = await fetchContent(usernamesURL);
 	const firstNames = await fetchContent(firstNamesURL);
 	const lastNames = await fetchContent(lastNamesURL);
 
-	const users = [];
 	for (let i = 0; i < count; i += 1) {
 		var salt = crypto.randomBytes(16).toString("hex");
 		var password = usernames[Math.floor(Math.random() * usernames.length)];
@@ -37,7 +39,7 @@ const generateUser = async (count) => {
 
 		const usernameIndex = Math.floor(Math.random() * usernames.length);
 
-		users.push({
+		const newUser = new User({
 			username: usernames[usernameIndex],
 			firstName: firstNames[Math.floor(Math.random() * firstNames.length)],
 			lastName: lastNames[Math.floor(Math.random() * lastNames.length)],
@@ -45,11 +47,18 @@ const generateUser = async (count) => {
 			salt: salt,
 			email: `${usernames[usernameIndex]}@${getMailProvider()}`,
 		});
+
+		await newUser.save();
 		// remove username from list
 		usernames.splice(usernameIndex, 1);
 	}
-	return users;
+
+	const savedUsers = getSavedUsers();
+	for (let i = 0; i < savedUsers.length; i += 1) {
+		const newUser = new User(savedUsers[i]);
+		await newUser.save();
+	}
 };
 
-module.exports = generateUser;
+module.exports = generateUsers;
 

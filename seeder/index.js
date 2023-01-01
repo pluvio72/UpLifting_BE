@@ -1,30 +1,20 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const { User } = require("../models");
+const Exercise = require("../models/exercise");
 
-const getUsers = require("./data/userData");
-const generateUser = require("./generators/userGenerator");
+const generateUsers = require("./generators/userGenerator");
+const generateExercises = require("./generators/exerciseGenerator");
 
 mongoose.connect(process.env.DB_URI).then(async (res) => {
 	try {
-		// remove all users
-		await User.remove({});
+		// remove all data
+		await User.deleteMany({});
+		await Exercise.deleteMany({});
 
-		let users = await generateUser(50);
-		const savedUsers = getUsers();
-		users = users.concat(savedUsers);
-
-		for (let i = 0; i < users.length; i += 1) {
-			const user = new User({
-				firstName: users[i].firstName,
-				lastName: users[i].lastName,
-				username: users[i].username,
-				password: users[i].password,
-				salt: users[i].salt,
-				email: users[i].email,
-			});
-			await user.save();
-		}
+		// generate data
+		await generateUsers(50);
+		await generateExercises();
 
 		console.log("Database seeding finished...");
 		res.disconnect();
