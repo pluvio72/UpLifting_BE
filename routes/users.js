@@ -13,7 +13,7 @@ router.post("/sign-in", async (req, res) => {
   const {username, password} = req.body;
 
   try {
-    const user = await User.findOne({username});
+    const user = await User.findOne({username}).populate('gym');
     if (user) {
       const correctPassword = user.checkPassword(password);
       const newSecretKey = await user.assignNewKey();
@@ -30,7 +30,8 @@ router.post("/sign-in", async (req, res) => {
           account: {
             firstName: user.firstName,
             lastName: user.lastName,
-            username: user.username
+            username: user.username,
+            gym: user.gym
           }
         });
       } else {
@@ -133,5 +134,38 @@ router.post("/update/account", authenticateUser, async (req, res) => {
     const {username, data} = req.body;
   } catch (error) {}
 });
+
+router.post("/friend/request", authenticateUser, async (req, res) => {
+  try {
+    const {newFriendUsername, username} = req.body;
+    const user = await User.findOne({username});
+    const friend = await User.findOne({username: newFriendUsername});
+    await friend.receiveFriendRequest(user._id);
+    return res.json({success: true});
+  } catch (error) {
+    console.warn(`Error in POST /users/friend/request, ${
+      error.message
+    }.`);
+    return res.json({success: false});
+  }
+});
+
+router.post("/", authenticateUser, async (req, res) => {
+  try {
+    const {filter} = req.body;
+    const users = User.find({
+      username: {
+        $regex: filter,
+        $options: 'i'
+      }
+    }).select('-_id firstName lastName username');
+    return res.json({success: true, users});
+  } catch (error) {
+    console.warn(`Error in POST /users/, ${
+      error.message
+    }.`);
+    return res.json({success: false});
+  }
+})
 
 module.exports = router;

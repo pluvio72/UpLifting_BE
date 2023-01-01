@@ -39,6 +39,18 @@ const userSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "gyms"
   },
+  friends: {
+    type: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "users"
+        },
+        pending: Boolean
+      }
+    ],
+    default: []
+  },
   prs: {
     type: [
       {
@@ -66,9 +78,10 @@ const userSchema = mongoose.Schema({
   }
 });
 
-userSchema.methods.setPassword = function (password) {
+userSchema.methods.setPassword = async function (password) {
   this.salt = crypto.randomBytes(16).toString("hex");
   this.password = crypto.pbkdf2Sync(password, this.salt, 1000, 64, `sha512`).toString(`hex`);
+  await this.save();
 };
 
 userSchema.methods.checkPassword = function (password) {
@@ -83,6 +96,13 @@ userSchema.methods.assignNewKey = async function () {
   await this.save();
   return newKey;
 };
+
+userSchema.methods.receiveFriendRequest = async function (userId) {
+  if (this.friends.find(e => e.user === userId) !== undefined) {
+    this.friends.push({user: userId, pending: true});
+    await this.save();
+  }
+}
 
 userSchema.methods.getWorkouts = async function (query, select, options) {
   // if user is using pounds instead of kilos
