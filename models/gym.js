@@ -4,11 +4,11 @@ const gymSchema = mongoose.Schema({
   brand: {
     type: String,
     required: true,
-    unique: false,
+    unique: false
   },
   name: {
     type: String,
-    required: true,
+    required: true
   },
   address: {
     type: String,
@@ -20,7 +20,7 @@ const gymSchema = mongoose.Schema({
   },
   confirmed: {
     type: Boolean,
-    default: false,
+    default: false
   }
 });
 
