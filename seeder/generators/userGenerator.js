@@ -30,7 +30,10 @@ const generateUsers = async (count) => {
 	const firstNames = await fetchContent(firstNamesURL);
 	const lastNames = await fetchContent(lastNamesURL);
 
-	for (let i = 0; i < count; i += 1) {
+	const savedUsers = getSavedUsers();
+
+	let users = [];
+	for (let i = 0; i < count - savedUsers.length; i += 1) {
 		var salt = crypto.randomBytes(16).toString("hex");
 		var password = usernames[Math.floor(Math.random() * usernames.length)];
 		var encryptedPassword = crypto
@@ -51,13 +54,18 @@ const generateUsers = async (count) => {
 		await newUser.save();
 		// remove username from list
 		usernames.splice(usernameIndex, 1);
+
+		users.push(newUser);
 	}
 
-	const savedUsers = getSavedUsers();
 	for (let i = 0; i < savedUsers.length; i += 1) {
 		const newUser = new User(savedUsers[i]);
 		await newUser.save();
+
+		users.push(newUser);
 	}
+
+	return users;
 };
 
 module.exports = generateUsers;
