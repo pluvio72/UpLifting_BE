@@ -149,15 +149,24 @@ userSchema.methods.getSpecificExercisesHistory = async function (
 			creator: this._id,
 			exercises: { $elemMatch: { name: { $in: exerciseNames } } },
 		})
-		.select("exercises");
+		.select("exercises date_completed");
 
-	return workouts
-		.map((e) =>
-			e.exercises
-				.filter((i) => exerciseNames.includes(i.name))
-				.map((j) => ({ name: j.name, set: j.sets }))
-		)
-		.flat();
+	let outputObj = {};
+	for (let i = 0; i < workouts.length; i += 1) {
+		for (let j = 0; j < workouts[i].exercises.length; j += 1) {
+			let cur = workouts[i].exercises[j];
+			if (exerciseNames.includes(cur.name)) {
+				let curInputObj = {
+					set: cur.sets,
+					date_completed: workouts[i].date_completed,
+				};
+				if (outputObj[cur.name] === undefined)
+					outputObj[cur.name] = [curInputObj];
+				else outputObj[cur.name].push(curInputObj);
+			}
+		}
+	}
+	return outputObj;
 };
 
 userSchema.methods.addPRs = async function (prs) {
