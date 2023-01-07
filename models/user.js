@@ -141,6 +141,20 @@ userSchema.methods.getWorkouts = async function (query, select, options) {
 	return workouts;
 };
 
+userSchema.methods.getSpecificExercisesHistory = async function (
+	exerciseNames
+) {
+	const workouts = await workout
+		.find({
+			creator: this._id,
+			exercises: { $elemMatch: { name: { $in: exerciseNames } } },
+		})
+		.select("exercises");
+	return workouts
+		.map((e) => e.filter((i) => exerciseNames.includes(i.name)))
+		.flat();
+};
+
 userSchema.methods.addPRs = async function (prs) {
 	this.prs = this.prs.concat(prs);
 	await this.save();

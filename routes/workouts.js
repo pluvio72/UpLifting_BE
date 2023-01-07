@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const authenticateUser = require("../middleware/auth");
+const getUsernameFromToken = require("../utils");
 
 const User = require("../models/user");
 const Workout = require("../models/workout");
@@ -118,9 +119,9 @@ router.post("/new", authenticateUser, async (req, res) => {
 });
 
 router.get("/:username/templates", authenticateUser, async (req, res) => {
-	const { username } = req.params;
-
 	try {
+		const { username } = req.params;
+
 		const user = await User.findOne({ username });
 		const workouts = user.getWorkouts({ isTemplate: true });
 		return res.json({ success: true, templates: workouts });
@@ -170,6 +171,25 @@ router.get("/:username/prs/:limit", authenticateUser, async (req, res) => {
 			`Error in GET: /workouts/:username/prs/:limit, ${error.message}.`
 		);
 		return res.json({ success: false, prs: [] });
+	}
+});
+
+router.post("/exercise-history", authenticateUser, async (req, res) => {
+	try {
+		const username = getUsernameFromToken(req);
+		const user = await User.findOne({ username });
+		if (!user) return res.json({ success: false, info: [] });
+
+		const history = await user.getSpecificExercisesHistory([
+			req.body.exerciseName,
+		]);
+		console.log("History:", history);
+		return res.json({ success: true, info: [] });
+	} catch (error) {
+		console.warn(
+			`Error in POST: /workouts/exercise-history, ${error.message}.`
+		);
+		return res.json({ success: false, info: [] });
 	}
 });
 
