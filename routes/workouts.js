@@ -183,8 +183,8 @@ router.post("/exercise-history", authenticateUser, async (req, res) => {
 		const history = await user.getSpecificExercisesHistory([
 			req.body.exerciseName,
 		]);
-		console.log("History:", history);
-		return res.json({ success: true, info: [] });
+
+		return res.json({ success: true, info: history });
 	} catch (error) {
 		console.warn(
 			`Error in POST: /workouts/exercise-history, ${error.message}.`

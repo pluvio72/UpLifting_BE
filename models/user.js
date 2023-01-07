@@ -150,8 +150,13 @@ userSchema.methods.getSpecificExercisesHistory = async function (
 			exercises: { $elemMatch: { name: { $in: exerciseNames } } },
 		})
 		.select("exercises");
+
 	return workouts
-		.map((e) => e.filter((i) => exerciseNames.includes(i.name)))
+		.map((e) =>
+			e.exercises
+				.filter((i) => exerciseNames.includes(i.name))
+				.map((j) => ({ name: j.name, set: j.sets }))
+		)
 		.flat();
 };
 
