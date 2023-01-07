@@ -67,15 +67,19 @@ const userSchema = mongoose.Schema({
 		useKilos: Boolean,
 	},
 	stats: {
-		weight: {
-			unit: String,
-			value: Number,
-		},
-		height: {
-			unit: String,
-			value: Number,
+		_id: false,
+		type: {
+			weight: {
+				unit: String,
+				value: Number,
+			},
+			height: {
+				unit: String,
+				value: Number,
+			},
 		},
 	},
+	default: {},
 });
 
 userSchema.methods.setPassword = async function (password) {

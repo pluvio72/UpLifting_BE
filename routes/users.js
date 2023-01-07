@@ -7,9 +7,9 @@ var { Gym, User } = require("../models");
 const authenticateUser = require("../middleware/auth");
 
 router.post("/sign-in", async (req, res) => {
-	const { username, password } = req.body;
-
 	try {
+		const { username, password } = req.body;
+
 		const user = await User.findOne({ username }).populate("gym");
 		if (user) {
 			const correctPassword = user.checkPassword(password);
@@ -19,7 +19,10 @@ router.post("/sign-in", async (req, res) => {
 					email: user.email,
 					user: user.username,
 				},
-				newSecretKey
+				newSecretKey,
+				{
+					expiresIn: "1d",
+				}
 			);
 			// console.log('Sign Up Token Generated:', token);
 
@@ -31,6 +34,8 @@ router.post("/sign-in", async (req, res) => {
 						firstName: user.firstName,
 						lastName: user.lastName,
 						username: user.username,
+						stats: user.stats,
+						settings: user.settings,
 						gym: user.gym,
 					},
 				});
@@ -171,16 +176,16 @@ router.post("/friend/request", authenticateUser, async (req, res) => {
 router.post("/", authenticateUser, async (req, res) => {
 	try {
 		const { filter } = req.body;
-		const users = User.find({
+		const users = await User.find({
 			username: {
 				$regex: filter,
 				$options: "i",
 			},
-		}).select("-_id firstName lastName username");
+		}).select("-_id firstName lastName username stats settings");
 		return res.json({ success: true, users });
 	} catch (error) {
 		console.warn(`Error in POST /users/, ${error.message}.`);
-		return res.json({ success: false });
+		return res.json({ success: false, users: [] });
 	}
 });
 
