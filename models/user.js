@@ -106,8 +106,9 @@ userSchema.methods.assignNewKey = async function () {
 };
 
 userSchema.methods.receiveFriendRequest = async function (userId) {
-	if (this.friends.find((e) => e.user === userId) !== undefined) {
+	if (this.friends.find((e) => e.user === userId) === undefined) {
 		this.friends.push({ user: userId, pending: true });
+		console.log("Received friend request from: ", userId);
 		await this.save();
 	}
 };
