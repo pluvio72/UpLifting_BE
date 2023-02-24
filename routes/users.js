@@ -37,6 +37,7 @@ router.post("/sign-in", async (req, res) => {
 						stats: user.stats,
 						settings: user.settings,
 						gym: user.gym,
+						friends: user.friends,
 					},
 				});
 			} else {
