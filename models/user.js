@@ -122,6 +122,17 @@ userSchema.methods.acceptFriendRequest = async function (userId) {
 	}
 }
 
+userSchema.methods.rejectFriendRequest = async function (userId) {
+	const index = this.friends.findIndex(e => e.user == userId);
+	if (index !== -1) {
+		const newFriendsArray = this.friends.slice(0, index);
+		newFriendsArray.concat(this.friends.slice(index + 1));
+		this.friends = newFriendsArray;
+		await this.save();
+		console.log("Rejected friend request: ", userId);
+	}
+}
+
 userSchema.methods.getWorkouts = async function (query, select, options) {
 	// if user is using pounds instead of kilos
 	// convert to pounds when sending to FE

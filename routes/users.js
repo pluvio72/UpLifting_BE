@@ -185,7 +185,20 @@ router.post("/friend/request/accept", authenticateUser, async (req, res) => {
 		await user.acceptFriendRequest(friend.id);
 		return res.json({ success: true });
 	} catch (error) {
-		console.warn(`Error in POST /users/friend/request, ${error.message}.`);
+		console.warn(`Error in POST /users/friend/request/accept, ${error.message}.`);
+		return res.json({ success: false });
+	}
+});
+
+router.post("/friend/request/reject", authenticateUser, async (req, res) => {
+	try {
+		const { friendUsername, username } = req.body;
+		const user = await User.findOne({ username });
+		const friend = await User.findOne({ username: friendUsername });
+		await user.rejectFriendRequest(friend.id);
+		return res.json({ success: true });
+	} catch (error) {
+		console.warn(`Error in POST /users/friend/request/reject, ${error.message}.`);
 		return res.json({ success: false });
 	}
 })
