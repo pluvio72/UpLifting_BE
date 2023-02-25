@@ -168,9 +168,9 @@ router.post("/friend/request", authenticateUser, async (req, res) => {
 	try {
 		const { newFriendUsername, username } = req.body;
 		const user = await User.findOne({ username });
-		const friend = await User.findOne({ username: newFriendUsername });
+		const friend = await User.findOne({ username: newFriendUsername }).select("-_id firstName lastName username");
 		await friend.receiveFriendRequest(user.id);
-		return res.json({ success: true });
+		return res.json({ success: true, friend });
 	} catch (error) {
 		console.warn(`Error in POST /users/friend/request, ${error.message}.`);
 		return res.json({ success: false });
@@ -181,9 +181,9 @@ router.post("/friend/request/accept", authenticateUser, async (req, res) => {
 	try {
 		const { friendUsername, username } = req.body;
 		const user = await User.findOne({ username });
-		const friend = await User.findOne({ username: friendUsername });
+		const friend = await User.findOne({ username: friendUsername }).select("-_id firstName lastName username");
 		await user.acceptFriendRequest(friend.id);
-		return res.json({ success: true });
+		return res.json({ success: true, friend });
 	} catch (error) {
 		console.warn(`Error in POST /users/friend/request, ${error.message}.`);
 		return res.json({ success: false });
