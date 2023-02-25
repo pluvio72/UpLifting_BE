@@ -10,7 +10,10 @@ router.post("/sign-in", async (req, res) => {
 	try {
 		const { username, password } = req.body;
 
-		const user = await User.findOne({ username }).populate("gym");
+		const user = await User.findOne({ username }).populate({
+			path: "friends",
+			populate: { path: "user" }
+		}).populate("gym");
 		if (user) {
 			const correctPassword = user.checkPassword(password);
 			const newSecretKey = await user.assignNewKey();
@@ -166,13 +169,26 @@ router.post("/friend/request", authenticateUser, async (req, res) => {
 		const { newFriendUsername, username } = req.body;
 		const user = await User.findOne({ username });
 		const friend = await User.findOne({ username: newFriendUsername });
-		await friend.receiveFriendRequest(user._id);
+		await friend.receiveFriendRequest(user.id);
 		return res.json({ success: true });
 	} catch (error) {
 		console.warn(`Error in POST /users/friend/request, ${error.message}.`);
 		return res.json({ success: false });
 	}
 });
+
+router.post("/friend/request/accept", authenticateUser, async (req, res) => {
+	try {
+		const { friendUsername, username } = req.body;
+		const user = await User.findOne({ username });
+		const friend = await User.findOne({ username: friendUsername });
+		await user.acceptFriendRequest(friend.id);
+		return res.json({ success: true });
+	} catch (error) {
+		console.warn(`Error in POST /users/friend/request, ${error.message}.`);
+		return res.json({ success: false });
+	}
+})
 
 router.post("/", authenticateUser, async (req, res) => {
 	try {

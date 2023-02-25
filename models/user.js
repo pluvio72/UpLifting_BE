@@ -113,6 +113,15 @@ userSchema.methods.receiveFriendRequest = async function (userId) {
 	}
 };
 
+userSchema.methods.acceptFriendRequest = async function (userId) {
+	const index = this.friends.findIndex(e => e.user == userId);
+	if (index !== -1) {
+		this.friends[index].pending = false;
+		await this.save();
+		console.log("Accepted friend: ", userId);
+	}
+}
+
 userSchema.methods.getWorkouts = async function (query, select, options) {
 	// if user is using pounds instead of kilos
 	// convert to pounds when sending to FE
